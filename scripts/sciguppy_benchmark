@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+
+import numpy
+import math
+import click
+import timeit
+import scipy.signal
+import sciguppy
+
+x = numpy.random.rand(100,100,5).astype(numpy.float32)
+y = numpy.random.rand(4,20,3).astype(numpy.float32)
+
+def correlate_base(a1, a2, mode=sciguppy.FULL):
+    return scipy.signal.correlate(a1, a2, mode=mode)
+
+@click.group()
+@click.option('--mode', default=sciguppy.FULL, type=click.Choice([sciguppy.VALID, sciguppy.FULL]))
+@click.pass_context
+def benchmark(ctx, mode):
+    ctx.obj['mode'] = mode
+
+@benchmark.command()
+@click.pass_context
+def all(ctx):
+    mode = ctx.obj['mode']
+    out1 = correlate_base(x, y, mode=mode)
+    out3 = sciguppy.correlate(x, y, mode=mode)
+
+    assert numpy.allclose(out1, out3)
+
+    baseline = timeit.repeat(lambda: correlate_base(x, y, mode=mode), repeat=10, number=1)
+    window_gpu_baseline = timeit.repeat(lambda: sciguppy.correlate(x, y, mode=mode), repeat=10, number=1)
+
+    print 'baseline: avg={}, min={}, max={}'.format(numpy.average(baseline), min(baseline), max(baseline))
+    print 'window gpu baseline: avg={}, min={}, max={}'.format(numpy.average(window_gpu_baseline), min(window_gpu_baseline), max(window_gpu_baseline))
+
+@benchmark.command()
+@click.pass_context
+def gpu(ctx):
+    sciguppy.correlate(x, y, mode=ctx.obj['mode'])
+
+if __name__ == '__main__':
+    benchmark(obj={})
