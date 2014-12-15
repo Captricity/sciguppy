@@ -1,10 +1,14 @@
-__all__ = ['CorrelationModes', 'ArrayReturnTypes', 'MAX_BLOCK_SIZE']
+__all__ = ['CorrelationModes', 'MathModes', 'ArrayReturnTypes', 'MAX_BLOCK_SIZE']
 
 from enum import Enum
 
 class CorrelationModes(Enum):
     FULL = 'full'
     VALID = 'valid'
+
+class MathModes(Enum):
+    FAST = 'fast'
+    ACC = 'accurate'
 
 class ArrayReturnTypes(Enum):
     CPU = 'cpu'

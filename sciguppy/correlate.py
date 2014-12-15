@@ -8,7 +8,7 @@ import pycuda.autoinit
 import pycuda.gpuarray
 from pycuda.compiler import SourceModule
 from .utils import gpu_func
-from .enums import CorrelationModes, ArrayReturnTypes, MAX_BLOCK_SIZE
+from .enums import CorrelationModes, MAX_BLOCK_SIZE
 
 CUR_DIR = os.path.dirname(os.path.realpath(__file__))
 CACHE_DIR = os.path.join(CUR_DIR, 'cache')

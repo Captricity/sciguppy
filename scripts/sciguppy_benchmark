@@ -8,6 +8,7 @@ import scipy.signal
 import scipy.special
 import sciguppy
 
+a = numpy.random.rand(100,100,100).astype(numpy.float32)
 x = numpy.random.rand(100,100,5).astype(numpy.float32)
 y = numpy.random.rand(4,20,3).astype(numpy.float32)
 
@@ -17,28 +18,34 @@ def correlate_base(a1, a2, mode=sciguppy.CorrelationModes.FULL):
 @click.group()
 @click.option('--mode', default=sciguppy.CorrelationModes.FULL, type=click.Choice([sciguppy.CorrelationModes.VALID, sciguppy.CorrelationModes.FULL]))
 @click.option('--memcpy/--no-memcpy', default=True)
+@click.option('--fast/--no-fast', default=False)
 @click.pass_context
-def benchmark(ctx, mode, memcpy):
+def benchmark(ctx, mode, memcpy, fast):
     ctx.obj['mode'] = mode
     ctx.obj['memcpy'] = memcpy
+    ctx.obj['fast'] = fast 
 
 @benchmark.command()
 @click.pass_context
 def test(ctx):
-    mode = ctx.obj['mode']
-    out1 = correlate_base(x, y, mode=mode)
-    out2 = sciguppy.correlate(x, y, mode=mode)
+    out1 = correlate_base(x, y, mode=sciguppy.CorrelationModes.FULL)
+    out2 = sciguppy.correlate(x, y, mode=sciguppy.CorrelationModes.FULL)
     assert numpy.allclose(out1, out2)
 
-    out1 = scipy.special.expit(x)
-    out2 = sciguppy.expit(x)
+    out1 = correlate_base(x, y, mode=sciguppy.CorrelationModes.VALID)
+    out2 = sciguppy.correlate(x, y, mode=sciguppy.CorrelationModes.VALID)
     assert numpy.allclose(out1, out2)
+
+    out1 = scipy.special.expit(a)
+    out2 = sciguppy.expit(a)
+    out3 = sciguppy.expit(a, mode=sciguppy.MathModes.FAST)
+    assert numpy.allclose(out1, out2)
+    assert numpy.allclose(out1, out3)
 
 @benchmark.command()
 @click.pass_context
 def all(ctx):
     mode = ctx.obj['mode']
-
     correlate_cpu = lambda: correlate_base(x, y, mode=mode)
     if ctx.obj['memcpy']:
         correlate_gpu = lambda: sciguppy.correlate(x, y, mode=mode)
@@ -48,12 +55,13 @@ def all(ctx):
         correlate_gpu = lambda: sciguppy.correlate(d_x, d_y, mode=mode, return_type=sciguppy.ArrayReturnTypes.GPU)
     run_benchmark('correlate', correlate_cpu, correlate_gpu)
 
-    expit_cpu = lambda: scipy.special.expit(x)
+    mode = sciguppy.MathModes.FAST if ctx.obj['fast'] else sciguppy.MathModes.ACC
+    expit_cpu = lambda: scipy.special.expit(a)
     if ctx.obj['memcpy']:
-        expit_gpu = lambda: sciguppy.expit(x)
+        expit_gpu = lambda: sciguppy.expit(a, mode=mode)
     else:
-        d_x = sciguppy.utils.as_gpu(x)
-        expit_gpu = lambda: sciguppy.expit(d_x, return_type=sciguppy.ArrayReturnTypes.GPU)
+        d_a = sciguppy.utils.as_gpu(a)
+        expit_gpu = lambda: sciguppy.expit(d_a, mode=mode, return_type=sciguppy.ArrayReturnTypes.GPU)
     run_benchmark('expit', expit_cpu, expit_gpu)
 
 
