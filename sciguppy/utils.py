@@ -2,7 +2,6 @@ __all__ = ['as_gpu', 'as_cpu']
 
 import numpy
 import pycuda.gpuarray as gpuarray
-import pycuda.driver as cuda
 import pycuda.autoinit
 
 def as_gpu(a):

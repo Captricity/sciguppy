@@ -17,7 +17,7 @@ def read(fname):
 
 setup(
     name = "sciguppy",
-    version = "0.0.2",
+    version = "0.0.3",
     author="Captricity",
     author_email="support@captricity.com",
     description="SciGuppy is a library that accelerates scipy functions using the GPU",

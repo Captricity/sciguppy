@@ -10,11 +10,11 @@ import sciguppy
 x = numpy.random.rand(100,100,5).astype(numpy.float32)
 y = numpy.random.rand(4,20,3).astype(numpy.float32)
 
-def correlate_base(a1, a2, mode=sciguppy.FULL):
-    return scipy.signal.correlate(a1, a2, mode=mode)
+def correlate_base(a1, a2, mode=sciguppy.CorrelationModes.FULL):
+    return scipy.signal.correlate(a1, a2, mode=mode.value)
 
 @click.group()
-@click.option('--mode', default=sciguppy.FULL, type=click.Choice([sciguppy.VALID, sciguppy.FULL]))
+@click.option('--mode', default=sciguppy.CorrelationModes.FULL, type=click.Choice([sciguppy.CorrelationModes.VALID, sciguppy.CorrelationModes.FULL]))
 @click.option('--memcpy/--no-memcpy', default=True)
 @click.pass_context
 def benchmark(ctx, mode, memcpy):
@@ -42,7 +42,7 @@ def all(ctx):
     else:
         d_x = sciguppy.utils.as_gpu(x)
         d_y = sciguppy.utils.as_gpu(y)
-        window_gpu_baseline = timeit.repeat(lambda: sciguppy.correlate(d_x, d_y, mode=mode, return_type=sciguppy.GPU), repeat=10, number=1)
+        window_gpu_baseline = timeit.repeat(lambda: sciguppy.correlate(d_x, d_y, mode=mode, return_type=sciguppy.ArrayReturnTypes.GPU), repeat=10, number=1)
 
     print 'baseline: avg={}, min={}, max={}'.format(numpy.average(baseline), min(baseline), max(baseline))
     print 'window gpu baseline: avg={}, min={}, max={}'.format(numpy.average(window_gpu_baseline), min(window_gpu_baseline), max(window_gpu_baseline))
