@@ -5,6 +5,7 @@ import math
 import click
 import timeit
 import scipy.signal
+import scipy.special
 import sciguppy
 
 x = numpy.random.rand(100,100,5).astype(numpy.float32)
@@ -26,31 +27,50 @@ def benchmark(ctx, mode, memcpy):
 def test(ctx):
     mode = ctx.obj['mode']
     out1 = correlate_base(x, y, mode=mode)
-    out3 = sciguppy.correlate(x, y, mode=mode)
-    assert numpy.allclose(out1, out3)
+    out2 = sciguppy.correlate(x, y, mode=mode)
+    assert numpy.allclose(out1, out2)
+
+    out1 = scipy.special.expit(x)
+    out2 = sciguppy.expit(x)
+    assert numpy.allclose(out1, out2)
 
 @benchmark.command()
 @click.pass_context
 def all(ctx):
     mode = ctx.obj['mode']
 
-    baseline = timeit.repeat(lambda: correlate_base(x, y, mode=mode), repeat=10, number=1)
-
-    sciguppy.correlate(x, y, mode=mode) # warm the gpu before benchmarking
+    correlate_cpu = lambda: correlate_base(x, y, mode=mode)
     if ctx.obj['memcpy']:
-        window_gpu_baseline = timeit.repeat(lambda: sciguppy.correlate(x, y, mode=mode), repeat=10, number=1)
+        correlate_gpu = lambda: sciguppy.correlate(x, y, mode=mode)
     else:
         d_x = sciguppy.utils.as_gpu(x)
         d_y = sciguppy.utils.as_gpu(y)
-        window_gpu_baseline = timeit.repeat(lambda: sciguppy.correlate(d_x, d_y, mode=mode, return_type=sciguppy.ArrayReturnTypes.GPU), repeat=10, number=1)
+        correlate_gpu = lambda: sciguppy.correlate(d_x, d_y, mode=mode, return_type=sciguppy.ArrayReturnTypes.GPU)
+    run_benchmark('correlate', correlate_cpu, correlate_gpu)
 
-    print 'baseline: avg={}, min={}, max={}'.format(numpy.average(baseline), min(baseline), max(baseline))
-    print 'window gpu baseline: avg={}, min={}, max={}'.format(numpy.average(window_gpu_baseline), min(window_gpu_baseline), max(window_gpu_baseline))
+    expit_cpu = lambda: scipy.special.expit(x)
+    if ctx.obj['memcpy']:
+        expit_gpu = lambda: sciguppy.expit(x)
+    else:
+        d_x = sciguppy.utils.as_gpu(x)
+        expit_gpu = lambda: sciguppy.expit(d_x, return_type=sciguppy.ArrayReturnTypes.GPU)
+    run_benchmark('expit', expit_cpu, expit_gpu)
+
 
 @benchmark.command()
 @click.pass_context
 def gpu(ctx):
     sciguppy.correlate(x, y, mode=ctx.obj['mode'])
+
+def run_benchmark(name, cpu_func, gpu_func):
+    print name
+    baseline = timeit.repeat(cpu_func, repeat=10, number=1)
+
+    gpu_func() # warm the gpu before benchmarking
+    window_gpu_baseline = timeit.repeat(gpu_func, repeat=10, number=1)
+
+    print '\tbaseline: avg={}, min={}, max={}'.format(numpy.average(baseline), min(baseline), max(baseline))
+    print '\twindow gpu baseline: avg={}, min={}, max={}'.format(numpy.average(window_gpu_baseline), min(window_gpu_baseline), max(window_gpu_baseline))
 
 if __name__ == '__main__':
     benchmark(obj={})
