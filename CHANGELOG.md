@@ -1,6 +1,11 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [0.0.5] - 2014-12-15
+### Changed
+- expit uses a separate kernel for fast mode
+- expit fast mode approximates even more by bounding to -6 to 6
+
 ## [0.0.4] - 2014-12-15
 ### Added
 - MathModes enum for selecting fast operations at the expense of precision
