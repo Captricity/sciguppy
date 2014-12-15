@@ -15,21 +15,34 @@ def correlate_base(a1, a2, mode=sciguppy.FULL):
 
 @click.group()
 @click.option('--mode', default=sciguppy.FULL, type=click.Choice([sciguppy.VALID, sciguppy.FULL]))
+@click.option('--memcpy/--no-memcpy', default=True)
 @click.pass_context
-def benchmark(ctx, mode):
+def benchmark(ctx, mode, memcpy):
     ctx.obj['mode'] = mode
+    ctx.obj['memcpy'] = memcpy
+
+@benchmark.command()
+@click.pass_context
+def test(ctx):
+    mode = ctx.obj['mode']
+    out1 = correlate_base(x, y, mode=mode)
+    out3 = sciguppy.correlate(x, y, mode=mode)
+    assert numpy.allclose(out1, out3)
 
 @benchmark.command()
 @click.pass_context
 def all(ctx):
     mode = ctx.obj['mode']
-    out1 = correlate_base(x, y, mode=mode)
-    out3 = sciguppy.correlate(x, y, mode=mode)
-
-    assert numpy.allclose(out1, out3)
 
     baseline = timeit.repeat(lambda: correlate_base(x, y, mode=mode), repeat=10, number=1)
-    window_gpu_baseline = timeit.repeat(lambda: sciguppy.correlate(x, y, mode=mode), repeat=10, number=1)
+
+    sciguppy.correlate(x, y, mode=mode) # warm the gpu before benchmarking
+    if ctx.obj['memcpy']:
+        window_gpu_baseline = timeit.repeat(lambda: sciguppy.correlate(x, y, mode=mode), repeat=10, number=1)
+    else:
+        d_x = sciguppy.utils.as_gpu(x)
+        d_y = sciguppy.utils.as_gpu(y)
+        window_gpu_baseline = timeit.repeat(lambda: sciguppy.correlate(d_x, d_y, mode=mode, return_type=sciguppy.GPU), repeat=10, number=1)
 
     print 'baseline: avg={}, min={}, max={}'.format(numpy.average(baseline), min(baseline), max(baseline))
     print 'window gpu baseline: avg={}, min={}, max={}'.format(numpy.average(window_gpu_baseline), min(window_gpu_baseline), max(window_gpu_baseline))
