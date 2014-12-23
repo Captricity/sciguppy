@@ -1,11 +1,20 @@
 import os
+import glob
 from setuptools import setup
 from setuptools.command.install import install
 
-try:
-    from post_setup import post_install
-except ImportError:
-    post_install = lambda: None
+def post_install(install_path):
+    """
+    Post install script for pyCUDA applications to warm the cubin cache
+    """
+    import pycuda.autoinit
+    from pycuda.compiler import SourceModule
+    CACHE_DIR = os.path.join(install_path, 'cache')
+    if not os.path.exists(CACHE_DIR):
+        os.mkdir(CACHE_DIR)
+
+    for kernel in glob.glob(os.path.join(install_path, 'kernel', '*.cu')):
+        SourceModule(open(kernel).read(), cache_dir=CACHE_DIR)
 
 class CudaInstall(install):
     def run(self):
@@ -17,7 +26,7 @@ def read(fname):
 
 setup(
     name = "sciguppy",
-    version = "0.0.5",
+    version = "0.0.6",
     author="Captricity",
     author_email="support@captricity.com",
     description="SciGuppy is a library that accelerates scipy functions using the GPU",
