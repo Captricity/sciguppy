@@ -26,7 +26,6 @@ def read(fname):
 
 requirements = read('requirements.txt').split()
 setup_requirements = filter(lambda r: 'pycuda' in r or 'pytools' in r, requirements)
-install_requirements = filter(lambda r: 'pycuda' not in r and 'pytools' not in r, requirements)
 
 setup(
     name = "sciguppy",
@@ -41,5 +40,5 @@ setup(
         },
     scripts=['scripts/sciguppy_benchmark'],
     setup_requires=setup_requirements,
-    install_requires=install_requirements
+    install_requires=requirements
 )
