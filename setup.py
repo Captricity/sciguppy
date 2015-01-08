@@ -24,6 +24,10 @@ class CudaInstall(install):
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
+requirements = read('requirements.txt').split()
+setup_requirements = filter(lambda r: 'pycuda' in r, requirements)
+install_requirements = filter(lambda r: 'pycuda' not in r, requirements)
+
 setup(
     name = "sciguppy",
     version = "0.0.6",
@@ -36,5 +40,6 @@ setup(
             'install': CudaInstall
         },
     scripts=['scripts/sciguppy_benchmark'],
-    setup_requires=read('requirements.txt')
+    setup_requires=setup_requirements,
+    install_requires=install_requirements
 )
