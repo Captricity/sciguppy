@@ -36,5 +36,5 @@ setup(
             'install': CudaInstall
         },
     scripts=['scripts/sciguppy_benchmark'],
-    install_requires=read('requirements.txt')
+    setup_requires=read('requirements.txt')
 )
