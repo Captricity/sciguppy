@@ -16,12 +16,12 @@ def correlate_base(a1, a2, mode=sciguppy.CorrelationModes.FULL):
     return scipy.signal.correlate(a1, a2, mode=mode.value)
 
 @click.group()
-@click.option('--mode', default=sciguppy.CorrelationModes.FULL, type=click.Choice([sciguppy.CorrelationModes.VALID, sciguppy.CorrelationModes.FULL]))
+@click.option('--mode', default=sciguppy.CorrelationModes.FULL.name, type=click.Choice([sciguppy.CorrelationModes.VALID.name, sciguppy.CorrelationModes.FULL.name]))
 @click.option('--memcpy/--no-memcpy', default=True)
 @click.option('--fast/--no-fast', default=False)
 @click.pass_context
 def benchmark(ctx, mode, memcpy, fast):
-    ctx.obj['mode'] = mode
+    ctx.obj['mode'] = getattr(sciguppy.CorrelationModes, mode)
     ctx.obj['memcpy'] = memcpy
     ctx.obj['fast'] = fast 
 
