@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [0.0.6] - 2014-12-15
+### Bugfix
+- Fixes setup.py to work nicely with a clean install
+
 ## [0.0.5] - 2014-12-15
 ### Changed
 - expit uses a separate kernel for fast mode
