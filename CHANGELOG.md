@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [0.0.7] - 2015-01-16
+### Added
+- Dot product, using scikits.cuda
+
 ## [0.0.6] - 2014-12-15
 ### Bugfix
 - Fixes setup.py to work nicely with a clean install

@@ -12,6 +12,9 @@ a = numpy.random.rand(100,100,100).astype(numpy.float32)
 x = numpy.random.rand(100,100,5).astype(numpy.float32)
 y = numpy.random.rand(4,20,3).astype(numpy.float32)
 
+i = numpy.random.rand(100000, 50).astype(numpy.float32)
+j = numpy.random.rand(50, 1).astype(numpy.float32)
+
 def correlate_base(a1, a2, mode=sciguppy.CorrelationModes.FULL):
     return scipy.signal.correlate(a1, a2, mode=mode.value)
 
@@ -42,6 +45,10 @@ def test(ctx):
     assert numpy.allclose(out1, out2)
     assert numpy.allclose(out1, out3)
 
+    out1 = numpy.dot(i, j)
+    out2 = sciguppy.dot(i, j)
+    assert numpy.allclose(out1, out2)
+
 @benchmark.command()
 @click.pass_context
 def all(ctx):
@@ -64,6 +71,14 @@ def all(ctx):
         expit_gpu = lambda: sciguppy.expit(d_a, mode=mode, return_type=sciguppy.ArrayReturnTypes.GPU)
     run_benchmark('expit', expit_cpu, expit_gpu)
 
+    cpu = lambda: numpy.dot(i, j)
+    if ctx.obj['memcpy']:
+        gpu = lambda: sciguppy.dot(i, j)
+    else:
+        d_i = sciguppy.utils.as_gpu(i)
+        d_j = sciguppy.utils.as_gpu(j)
+        gpu = lambda: sciguppy.dot(d_i, d_j, return_type=sciguppy.ArrayReturnTypes.GPU)
+    run_benchmark('dot', cpu, gpu)
 
 @benchmark.command()
 @click.pass_context
@@ -75,10 +90,10 @@ def run_benchmark(name, cpu_func, gpu_func):
     baseline = timeit.repeat(cpu_func, repeat=10, number=1)
 
     gpu_func() # warm the gpu before benchmarking
-    window_gpu_baseline = timeit.repeat(gpu_func, repeat=10, number=1)
+    gpu_baseline = timeit.repeat(gpu_func, repeat=10, number=1)
 
     print '\tbaseline: avg={}, min={}, max={}'.format(numpy.average(baseline), min(baseline), max(baseline))
-    print '\twindow gpu baseline: avg={}, min={}, max={}'.format(numpy.average(window_gpu_baseline), min(window_gpu_baseline), max(window_gpu_baseline))
+    print '\tgpu baseline: avg={}, min={}, max={}'.format(numpy.average(gpu_baseline), min(gpu_baseline), max(gpu_baseline))
 
 if __name__ == '__main__':
     benchmark(obj={})

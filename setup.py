@@ -29,7 +29,7 @@ setup_requirements = filter(lambda r: 'pycuda' in r or 'pytools' in r, requireme
 
 setup(
     name = "sciguppy",
-    version = "0.0.6",
+    version = "0.0.7",
     author="Captricity",
     author_email="support@captricity.com",
     description="SciGuppy is a library that accelerates scipy functions using the GPU",

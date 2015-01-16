@@ -43,8 +43,7 @@ def gpu_func(f):
             if isinstance(args[i], (numpy.ndarray, numpy.generic)):
                 args[i] = as_gpu(args[i])
         if 'return_type' in kwargs:
-            return_type = kwargs['return_type']
-            del kwargs['return_type']
+            return_type = kwargs.pop('return_type')
         else:
             return_type = ArrayReturnTypes.CPU
 
@@ -55,9 +54,8 @@ def gpu_func(f):
             for item in out:
                 if isinstance(outs[i], gpuarray.GPUArray):
                     outs[i] = as_cpu(outs[i])
-            return tuple(outs)
+            out = tuple(outs)
         elif isinstance(out, gpuarray.GPUArray) and return_type == ArrayReturnTypes.CPU:
-            return as_cpu(out)
-        else:
-            return out
+            out = as_cpu(out)
+        return out
     return wrapper
