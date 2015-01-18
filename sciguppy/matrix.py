@@ -14,16 +14,35 @@ def destroy_cublas():
 atexit.register(destroy_cublas)
 
 @gpu_func
-def dot(d_a, d_b, out=None):
+def dot(d_a, d_b, transa='N', transb='N', out=None):
     if out is None:
-        out = gpuarray.empty((d_a.shape[0], d_b.shape[1]), numpy.float32)
-    return linalg.dot(d_a, d_b, handle=handle, out=out)
+        if transa == 'T':
+            out_x = d_a.shape[1]
+        else:
+            out_x = d_a.shape[0]
+        if transb == 'T':
+            out_y = d_b.shape[0]
+        else:
+            out_y = d_b.shape[1]
+        out = gpuarray.empty((out_x, out_y), numpy.float32)
+    return linalg.dot(d_a, d_b, transa=transa, transb=transb, handle=handle, out=out)
 
 @gpu_func
-def vector_addition(d_a, d_b):
-    d_b = d_b.copy()
-    assert len(d_a.shape) == 1
-    assert len(d_b.shape) == 1
-    assert d_a.size == d_b.size
-    cublas.cublasSaxpy(handle, d_a.size, 1.0, d_a.gpudata, 1, d_b.gpudata, 1)
-    return d_b
+def matrix_addition(d_a, d_b):
+    # Overwrites d_a
+    assert d_a.shape == d_b.shape
+    if len(d_a.shape) == 1:
+        # Vector addition
+        cublas.cublasSaxpy(handle, d_a.size, 1.0, d_b.gpudata, 1, d_a.gpudata, 1)
+    else:
+        # Matrix addition
+        m, n = d_a.shape
+        cublas.cublasSgeam(handle,
+                'N', 'N',
+                m, n,
+                1.0,
+                d_a.gpudata, m,
+                1.0,
+                d_b.gpudata, m,
+                d_a.gpudata, m)
+    return d_a
