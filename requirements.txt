@@ -3,4 +3,5 @@ pycuda==2014.1
 click==3.3
 enum34==1.0.4
 
+Mako==1.0.0
 git+https://github.com/lebedov/scikits.cuda.git#egg=scikits.cuda
