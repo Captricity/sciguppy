@@ -24,8 +24,10 @@ class CudaInstall(install):
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
-requirements = read('requirements.txt').split()
-setup_requirements = filter(lambda r: 'pycuda' in r or 'pytools' in r, requirements)
+all_requirements = read('requirements.txt').split()
+setup_requirements = filter(lambda r: 'pycuda' in r or 'pytools' in r, all_requirements)
+install_requirements = filter(lambda r: not r.startswith('git'), all_requirements)
+dependency_links = filter(lambda r: r.startswith('git'), all_requirements)
 
 setup(
     name = "sciguppy",
@@ -40,5 +42,6 @@ setup(
         },
     scripts=['scripts/sciguppy_benchmark'],
     setup_requires=setup_requirements,
-    install_requires=requirements
+    install_requires=install_requirements,
+    dependency_links=dependency_links
 )
