@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Dot product, using scikits.cuda
 - Matrix elementwise addition, using cublas
+- config.DEFAULT_OUTPUT_TYPE, to control what the default output of gpu functions are
 
 ## [0.0.6] - 2014-12-15
 ### Bugfix

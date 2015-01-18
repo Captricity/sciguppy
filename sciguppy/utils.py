@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 __all__ = ['as_gpu', 'as_cpu', 'gpu_func']
 
 import numpy
@@ -5,6 +7,7 @@ import pycuda.gpuarray as gpuarray
 import pycuda.autoinit
 from functools import wraps
 
+import sciguppy.config as config
 from .enums import ArrayReturnTypes
 
 def as_gpu(a):
@@ -45,7 +48,7 @@ def gpu_func(f):
         if 'return_type' in kwargs:
             return_type = kwargs.pop('return_type')
         else:
-            return_type = ArrayReturnTypes.CPU
+            return_type = config.DEFAULT_OUTPUT_TYPE
 
         out = f(*args, **kwargs)
 
