@@ -1,5 +1,6 @@
-__all__ = ['CorrelationModes', 'MathModes', 'ArrayReturnTypes', 'MAX_BLOCK_SIZE']
+__all__ = ['CorrelationModes', 'MathModes', 'ArrayReturnTypes', 'MAX_BLOCK_SIZE', 'CUR_DIR', 'CACHE_DIR']
 
+import os
 from enum import Enum
 
 class CorrelationModes(Enum):
@@ -15,3 +16,5 @@ class ArrayReturnTypes(Enum):
     GPU = 'gpu'
 
 MAX_BLOCK_SIZE = 512
+CUR_DIR = os.path.dirname(os.path.realpath(__file__))
+CACHE_DIR = os.path.join(CUR_DIR, 'cache')

@@ -1,17 +1,37 @@
+__all__ = ['dot', 'elementwise_div', 'matrix_addition']
+
+import os
 import numpy
 import atexit
-import time
+import math
 import pycuda.autoinit
 import pycuda.gpuarray as gpuarray
 import scikits.cuda.cublas as cublas
 import scikits.cuda.linalg as linalg
+from pycuda.compiler import SourceModule
 
 from .utils import gpu_func
+from .enums import MAX_BLOCK_SIZE, CUR_DIR, CACHE_DIR
 
 handle = cublas.cublasCreate()
 def destroy_cublas():
     cublas.cublasDestroy(handle)
 atexit.register(destroy_cublas)
+
+mod = SourceModule(open(os.path.join(CUR_DIR, 'kernel/matrix.cu')).read(), cache_dir=CACHE_DIR)
+elementwise_div_kernel = mod.get_function('elementwise_div_kernel')
+
+@gpu_func
+def elementwise_div(d_a, scalar, inplace=False):
+    if inplace:
+        d_out = d_a
+    else:
+        d_out = gpuarray.zeros_like(d_a)
+    thread_size = min(d_a.size, MAX_BLOCK_SIZE)
+    block_size = max(int(math.ceil(d_a.size / float(thread_size))), 1)
+    elementwise_div_kernel(d_a, numpy.float32(scalar), d_out, numpy.int32(d_a.size),
+            block=(thread_size,1,1), grid=(block_size,1,1))
+    return d_out
 
 @gpu_func
 def dot(d_a, d_b, transa='N', transb='N', out=None):

@@ -1,4 +1,4 @@
-__all__ = ['ewsum', 'ewsum_back']
+__all__ = ['ewsum', 'ewsum_back', 'softmax_back']
 
 import os
 import math
@@ -9,15 +9,15 @@ from pycuda.compiler import SourceModule
 
 from .matrix import matrix_addition
 from .utils import gpu_func
-from .enums import MAX_BLOCK_SIZE
-
-CUR_DIR = os.path.dirname(os.path.realpath(__file__))
-CACHE_DIR = os.path.join(CUR_DIR, 'cache')
+from .enums import MAX_BLOCK_SIZE, CUR_DIR, CACHE_DIR
 
 mod = SourceModule(open(os.path.join(CUR_DIR, 'kernel/ewsum.cu')).read(), cache_dir=CACHE_DIR)
 ewsum_kernel = mod.get_function('ewsum_kernel')
 ewsum_sum_kernel = mod.get_function('ewsum_sum_kernel')
 ewsum_back_kernel = mod.get_function('ewsum_back_kernel')
+
+mod2 = SourceModule(open(os.path.join(CUR_DIR, 'kernel/softmax.cu')).read(), cache_dir=CACHE_DIR)
+softmax_back_kernel = mod2.get_function('softmax_back_kernel')
 
 @gpu_func
 def ewsum(d_a, d_w):
@@ -61,5 +61,14 @@ def ewsum_back(d_error, d_w):
     block_size = max(int(math.ceil(d_out.size / float(thread_size))), 1)
     ewsum_back_kernel(d_error, d_w, d_out,
             numpy.int32(num_w), numpy.int32(err_width), numpy.int32(width), numpy.int32(total_dim),
+            block=(thread_size,1,1), grid=(block_size,1,1))
+    return d_out
+
+@gpu_func
+def softmax_back(d_a, d_error, s):
+    d_out = gpuarray.zeros_like(d_a)
+    thread_size = min(d_out.size, MAX_BLOCK_SIZE)
+    block_size = max(int(math.ceil(d_out.size / float(thread_size))), 1)
+    softmax_back_kernel(d_a, d_error, d_out, numpy.float32(s), numpy.int32(d_out.size),
             block=(thread_size,1,1), grid=(block_size,1,1))
     return d_out
