@@ -1,4 +1,4 @@
-__all__ = ['dot', 'subset_assignment', 'matrix_addition']
+__all__ = ['dot', 'subset_assignment', 'subset_slice_assignment', 'vector_subset_slice_assignment', 'matrix_addition']
 
 import os
 import numpy
@@ -21,14 +21,34 @@ atexit.register(destroy_cublas)
 
 mod = SourceModule(open(os.path.join(CUR_DIR, 'kernel/matrix.cu')).read(), cache_dir=CACHE_DIR)
 subset_assignment_kernel = mod.get_function('subset_assignment_kernel')
+subset_slice_assignment_kernel = mod.get_function('subset_slice_assignment_kernel')
+vector_subset_slice_assignment_kernel = mod.get_function('vector_subset_slice_assignment_kernel')
 
+# TODO: generalize
 def subset_assignment(d_a, d_b, a_x):
-    a_width = d_a.shape[0]
     thread_size = min(d_b.size, MAX_BLOCK_SIZE)
     block_size = max(int(math.ceil(d_b.size / float(thread_size))), 1)
     subset_assignment_kernel(
-            d_a, d_b, numpy.int32(a_x), numpy.int32(a_width), numpy.int32(d_b.size),
+            d_a, d_b, numpy.int32(a_x), numpy.int32(d_b.size),
             block=(thread_size,1,1), grid=(block_size,1,1))
+def subset_slice_assignment(d_a, d_b, a_x_slice):
+    thread_size = min(d_b.size, MAX_BLOCK_SIZE)
+    block_size = max(int(math.ceil(d_b.size / float(thread_size))), 1)
+    assert (a_x_slice[1] - a_x_slice[0]) == d_b.shape[0]
+    subset_slice_assignment_kernel(
+            d_a, d_b, numpy.int32(a_x_slice[0]), numpy.int32(d_b.size), numpy.int32(numpy.prod(d_b.shape[1:])),
+            block=(thread_size,1,1), grid=(block_size,1,1))
+def vector_subset_slice_assignment(d_a, d_b, a_slice):
+    thread_size = min(d_b.size, MAX_BLOCK_SIZE)
+    block_size = max(int(math.ceil(d_b.size / float(thread_size))), 1)
+    assert len(d_a.shape) == 1
+    assert len(d_b.shape) == 1
+    assert (a_slice[1] - a_slice[0]) == d_b.shape[0]
+    vector_subset_slice_assignment_kernel(
+            d_a, d_b, numpy.int32(a_slice[0]), numpy.int32(d_b.size),
+            block=(thread_size,1,1), grid=(block_size,1,1))
+
+
 
 @gpu_func
 def dot(d_a, d_b, transa='N', transb='N', out=None):

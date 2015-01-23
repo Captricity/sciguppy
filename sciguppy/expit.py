@@ -1,4 +1,4 @@
-__all__ = ['expit', 'expit_back']
+__all__ = ['expit', 'expit_back', 'exp']
 
 import os
 import math
@@ -15,6 +15,19 @@ mod = SourceModule(open(os.path.join(CUR_DIR, 'kernel/expit.cu')).read(), cache_
 expit_kernel = mod.get_function('expit_kernel')
 expit_fast_kernel = mod.get_function('expit_fast_kernel')
 expit_back_kernel = mod.get_function('expit_back_kernel')
+exp_fast_kernel = mod.get_function('exp_fast_kernel')
+
+@gpu_func
+def exp(d_a, mode=MathModes.ACC):
+    if mode == MathModes.ACC:
+        return cumath.exp(d_a)
+
+    d_out = gpuarray.zeros_like(d_a)
+    thread_size = min(d_a.size, MAX_BLOCK_SIZE)
+    block_size = max(int(math.ceil(d_a.size / float(thread_size))), 1)
+    exp_fast_kernel(d_a, d_out, numpy.int32(d_a.size),
+            block=(thread_size,1,1), grid=(block_size,1,1))
+    return d_out
 
 @gpu_func
 def expit(d_a, mode=MathModes.ACC):
