@@ -1,10 +1,11 @@
-__all__ = ['dot', 'elementwise_div', 'matrix_addition']
+__all__ = ['dot', 'subset_assignment', 'matrix_addition']
 
 import os
 import numpy
 import atexit
 import math
 import pycuda.autoinit
+import pycuda.driver as cuda
 import pycuda.gpuarray as gpuarray
 import scikits.cuda.cublas as cublas
 import scikits.cuda.linalg as linalg
@@ -19,19 +20,15 @@ def destroy_cublas():
 atexit.register(destroy_cublas)
 
 mod = SourceModule(open(os.path.join(CUR_DIR, 'kernel/matrix.cu')).read(), cache_dir=CACHE_DIR)
-elementwise_div_kernel = mod.get_function('elementwise_div_kernel')
+subset_assignment_kernel = mod.get_function('subset_assignment_kernel')
 
-@gpu_func
-def elementwise_div(d_a, scalar, inplace=False):
-    if inplace:
-        d_out = d_a
-    else:
-        d_out = gpuarray.zeros_like(d_a)
-    thread_size = min(d_a.size, MAX_BLOCK_SIZE)
-    block_size = max(int(math.ceil(d_a.size / float(thread_size))), 1)
-    elementwise_div_kernel(d_a, numpy.float32(scalar), d_out, numpy.int32(d_a.size),
+def subset_assignment(d_a, d_b, a_x):
+    a_width = d_a.shape[0]
+    thread_size = min(d_b.size, MAX_BLOCK_SIZE)
+    block_size = max(int(math.ceil(d_b.size / float(thread_size))), 1)
+    subset_assignment_kernel(
+            d_a, d_b, numpy.int32(a_x), numpy.int32(a_width), numpy.int32(d_b.size),
             block=(thread_size,1,1), grid=(block_size,1,1))
-    return d_out
 
 @gpu_func
 def dot(d_a, d_b, transa='N', transb='N', out=None):
@@ -54,7 +51,7 @@ def matrix_addition(d_a, d_b):
     if len(d_a.shape) == 1:
         # Vector addition
         cublas.cublasSaxpy(handle, d_a.size, 1.0, d_b.gpudata, 1, d_a.gpudata, 1)
-    else:
+    elif len(d_a.shape) == 2:
         # Matrix addition
         m, n = d_a.shape
         cublas.cublasSgeam(handle,
@@ -65,4 +62,7 @@ def matrix_addition(d_a, d_b):
                 1.0,
                 d_b.gpudata, m,
                 d_a.gpudata, m)
+    else:
+        tmp = (d_a.ravel() + d_b.ravel()).reshape(d_a.shape)
+        cuda.memcpy_dtod(d_a.gpudata, tmp.gpudata, d_a.nbytes)
     return d_a

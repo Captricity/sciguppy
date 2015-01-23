@@ -55,8 +55,8 @@ def gpu_func(f):
         if isinstance(out, tuple) and return_type == ArrayReturnTypes.CPU:
             outs = []
             for item in out:
-                if isinstance(outs[i], gpuarray.GPUArray):
-                    outs[i] = as_cpu(outs[i])
+                if isinstance(item, gpuarray.GPUArray):
+                    outs.append(as_cpu(item))
             out = tuple(outs)
         elif isinstance(out, gpuarray.GPUArray) and return_type == ArrayReturnTypes.CPU:
             out = as_cpu(out)

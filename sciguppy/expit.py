@@ -9,10 +9,7 @@ import pycuda.autoinit
 from pycuda.compiler import SourceModule
 
 from .utils import gpu_func
-from .enums import MathModes, MAX_BLOCK_SIZE
-
-CUR_DIR = os.path.dirname(os.path.realpath(__file__))
-CACHE_DIR = os.path.join(CUR_DIR, 'cache')
+from .enums import MathModes, MAX_BLOCK_SIZE, CUR_DIR, CACHE_DIR
 
 mod = SourceModule(open(os.path.join(CUR_DIR, 'kernel/expit.cu')).read(), cache_dir=CACHE_DIR)
 expit_kernel = mod.get_function('expit_kernel')

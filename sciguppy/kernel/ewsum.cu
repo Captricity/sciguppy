@@ -1,5 +1,3 @@
-#include <stdio.h>
-
 __global__ void ewsum_kernel(float *d_a, float *d_w, float *d_out, int num_w, int width, int total_dim) {
 
     // Get the id and make sure it is within bounds

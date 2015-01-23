@@ -1,4 +1,4 @@
-__all__ = ['ewsum', 'ewsum_back', 'softmax_back']
+__all__ = ['ewsum', 'ewsum_back', 'softmax_back', 'rectify_back']
 
 import os
 import math
@@ -18,6 +18,10 @@ ewsum_back_kernel = mod.get_function('ewsum_back_kernel')
 
 mod2 = SourceModule(open(os.path.join(CUR_DIR, 'kernel/softmax.cu')).read(), cache_dir=CACHE_DIR)
 softmax_back_kernel = mod2.get_function('softmax_back_kernel')
+
+mod3 = SourceModule(open(os.path.join(CUR_DIR, 'kernel/rectify.cu')).read(), cache_dir=CACHE_DIR)
+rectify_back_kernel = mod3.get_function('rectify_back_kernel')
+
 
 @gpu_func
 def ewsum(d_a, d_w):
@@ -70,5 +74,17 @@ def softmax_back(d_a, d_error, s):
     thread_size = min(d_out.size, MAX_BLOCK_SIZE)
     block_size = max(int(math.ceil(d_out.size / float(thread_size))), 1)
     softmax_back_kernel(d_a, d_error, d_out, numpy.float32(s), numpy.int32(d_out.size),
+            block=(thread_size,1,1), grid=(block_size,1,1))
+    return d_out
+
+@gpu_func
+def rectify_back(d_a, d_error, inplace=False):
+    if inplace:
+        d_out = d_a
+    else:
+        d_out = gpuarray.zeros_like(d_a)
+    thread_size = min(d_out.size, MAX_BLOCK_SIZE)
+    block_size = max(int(math.ceil(d_out.size / float(thread_size))), 1)
+    rectify_back_kernel(d_a, d_error, d_out, numpy.int32(d_out.size),
             block=(thread_size,1,1), grid=(block_size,1,1))
     return d_out
