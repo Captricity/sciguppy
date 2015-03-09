@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [0.0.8] - 2015-03-09
+### Bugfix
+- Make expit slightly more efficient by reusing the constant
+
 ## [0.0.7] - 2015-01-16
 ### Added
 - Dot product, using scikits.cuda

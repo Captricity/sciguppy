@@ -10,7 +10,7 @@ __global__ void expit_kernel(float *d_a, float *d_aout, int size) {
         tmp = expf(x);
         d_aout[id] = tmp / (1.0 + tmp);
     } else {
-        d_aout[id] = 1.0 / (1.0 + expf(-d_a[id]));
+        d_aout[id] = 1.0 / (1.0 + expf(-x));
     }
 }
 
@@ -30,7 +30,7 @@ __global__ void expit_fast_kernel(float *d_a, float *d_aout, int size) {
         tmp = __expf(x);
         d_aout[id] = tmp / (1.0 + tmp);
     } else {
-        d_aout[id] = 1.0 / (1.0 + __expf(-d_a[id]));
+        d_aout[id] = 1.0 / (1.0 + __expf(-x));
     }
 }
 

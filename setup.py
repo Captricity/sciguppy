@@ -31,7 +31,7 @@ dependency_links = filter(lambda r: r.startswith('git'), all_requirements)
 
 setup(
     name = "sciguppy",
-    version = "0.0.7",
+    version = "0.0.8",
     author="Captricity",
     author_email="support@captricity.com",
     description="SciGuppy is a library that accelerates scipy functions using the GPU",
